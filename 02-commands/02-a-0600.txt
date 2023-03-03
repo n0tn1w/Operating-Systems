@@ -1,0 +1,3 @@
+mkdir dir1 -p practice/01
+touch practice/01/f1 practice/01/f2 practice/01/f3
+mv practice/01/f1 practice/01/f2 practice/01/f3 -t ~/dir1

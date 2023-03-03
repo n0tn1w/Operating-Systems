@@ -1,0 +1,4 @@
+touch permissions.txt 
+chmod u=r,g=wx,o=rx permissions.txt 
+OR
+chmod 435 permissions.txt 

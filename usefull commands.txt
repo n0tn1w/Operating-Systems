@@ -1,3 +1,4 @@
 ctrl + l => clear terminal
 history => show log
 tree => show current tree
+id => show you personal data

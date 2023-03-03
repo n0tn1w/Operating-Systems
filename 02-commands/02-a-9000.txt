@@ -1,0 +1,5 @@
+find myetc/ -name 'c*' -execdir tar -czf ~/c_start.tar {} ';'
+
+rm -dr myetc/
+
+rm c_start.tar 
