@@ -1,0 +1,3 @@
+find /etc -type f -readable -ls | sort -k 7 -n | head -1 | awk '{print $11}' | xargs -I '{}' cp '{}' ~/
+
+//da ... znam
