@@ -1,0 +1,1 @@
+cat /etc/passwd | tr ':' ' ' | cut -d ' ' -f 1-8 | sort -k 3 -n
