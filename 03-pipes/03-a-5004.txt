@@ -1,0 +1,1 @@
+cat /etc/passwd | cut -d":" -f3,5 | cut -d"," -f1 | egrep " .{,7}$" | cut -d":" -f1 | xargs -I {} egrep {} /etc/passwd 

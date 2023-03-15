@@ -1,0 +1,1 @@
+cat /etc/passwd | cut -d ':' -f5 | cut -d ',' -f 1 | tr -d '[:space:]' | fold -w1 | sort -u | wc -l

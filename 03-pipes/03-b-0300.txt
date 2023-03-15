@@ -1,0 +1,2 @@
+cat /etc/passwd | egrep "$(id -u)" | cut -d":" -f4
+

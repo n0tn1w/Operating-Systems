@@ -1,0 +1,1 @@
+cat /etc/passwd | head -n 46 | tail -n 18 | cut -d ":" -f3 |egrep -o '.$'

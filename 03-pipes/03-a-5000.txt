@@ -1,0 +1,4 @@
+cat /etc/passwd | egrep "$(id -u)"
+cat /etc/passwd | egrep -B 2 "$(id -u)"
+cat /etc/passwd | egrep -B 2 -A 3 "$(id -u)"
+cat /etc/passwd | egrep -B 2 "$(id -u)" | head -2
