@@ -1,0 +1,1 @@
+find ~ -type f -perm $(find /etc -type f -printf "%s %m\n" 2> /dev/null | sort -k 1 -n -r | head -n 1 | cut -d" " -f2)

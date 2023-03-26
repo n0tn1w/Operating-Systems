@@ -1,0 +1,1 @@
+find ~/songs -type f -printf "%f\n" | cut -d'-' -f1 | sed -E 's/ //g' | sort | uniq | xargs -I {} mkdir {}

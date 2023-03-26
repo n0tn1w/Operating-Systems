@@ -3,3 +3,5 @@ history => show log
 tree => show current tree
 id => show you personal data
 egrep --color => color the regex
+write username pts/** => to write to someone 
+ls /srv/fmi-os/ => github like structure

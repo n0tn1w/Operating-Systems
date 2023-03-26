@@ -1,0 +1,1 @@
+ cat /etc/group | awk -F: '{if($3 == "$(id -g)") {printf "Hello, %s\n", $1} else {printf "Hello, %s\n", $1}}'

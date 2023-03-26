@@ -1,0 +1,2 @@
+find /usr/include | egrep -c '.h$|.c$
+find /usr/include | egrep '.h$|.c$' | xargs -I {} cat {} | wc -l

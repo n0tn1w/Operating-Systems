@@ -1,0 +1,1 @@
+cat /etc/services | cut -f1- | tr '\t' '\n' | tr ' ' '\n' | egrep -v '^$' | sort | uniq -c | sort -k 1 -n -r | head 

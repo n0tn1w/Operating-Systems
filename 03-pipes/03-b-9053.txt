@@ -1,0 +1,1 @@
+cat population.csv | egrep "$(cat population.csv | egrep -o "[A-Z]{3},2016,[[:alnum:]]+$" | tr "," " " | sort -k 3 -n -r | head -n 1 | cut -d" " -f 1),2016" | cut -d"," -f1

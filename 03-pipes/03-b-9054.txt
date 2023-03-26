@@ -1,0 +1,1 @@
+cat population.csv | egrep "$(cat population.csv | egrep -o "[A-Z]{3},1969,[[:alnum:]]+$" | tr "," " "| sort -k 3 -n -r | head -n 42 | tail -n -1 | cut -d" " -f1),1969"| awk -F, '{printf "%s %d\n", $1,$4}'

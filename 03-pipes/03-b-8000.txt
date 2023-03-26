@@ -1,0 +1,1 @@
+cat mypasswd.txt | awk -F ':' '{printf "%s:,%s\n" , $1 , $5 }' | cut -d"," -f1,3 | egrep 'SI' | cut -d":" -f1 | sort -n > sort.txt

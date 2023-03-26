@@ -1,0 +1,2 @@
+cat population.csv | egrep -o "[A-Z]{3},2008,[[:alnum:]]+$" |awk -F, 'BEGIN{i = 0}{i += $3} END{print i}'
+cat population.csv | egrep -o "[A-Z]{3},2016,[[:alnum:]]+$" |awk -F, 'BEGIN{i = 0}{i += $3} END{print i}'

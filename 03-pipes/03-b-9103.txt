@@ -1,0 +1,1 @@
+find ~/songs -type f -printf "%f\n" | cut -d"-" -f2 | cut -d"(" -f1 | sed -E 's\^ \\g' | sed -E 's\ $\\g' | tr '[:lower:]' '[:upper:]' | tr ' ' '_' | sort -d

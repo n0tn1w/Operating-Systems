@@ -1,0 +1,1 @@
+find /tmp -type f -not -readable 2> /dev/null

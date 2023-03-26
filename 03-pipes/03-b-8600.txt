@@ -1,0 +1,1 @@
+find /usr -type f | egrep "\.sh$" | xargs -I {} cat {} | egrep "^#!" | sort | uniq -c | sort -k 1 -n -r | head -n 1 | awk '{print $2}' | sed 's/..//'

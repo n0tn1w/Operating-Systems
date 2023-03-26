@@ -1,0 +1,1 @@
+tar -xzvf songs.tar.gz -C ~/songs

@@ -1,0 +1,1 @@
+find ~/songs -type f -printf "%f\n" | egrep -c '(^Beatles|^Pink)'

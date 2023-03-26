@@ -1,0 +1,1 @@
+cat population.csv | egrep "Bulgaria" | tr "," " " | sort -k 4 -n -r | head -n 1 | cut -d " " -f3
