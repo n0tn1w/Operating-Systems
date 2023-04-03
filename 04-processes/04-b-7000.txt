@@ -1,0 +1,1 @@
+ps -eo size -g root | awk '{i+=$0} END{if(NR == 0) { print "No data"} else {printf "%s\n", int(i / NR)}}'

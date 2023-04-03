@@ -1,0 +1,1 @@
+ps -eo stime=,time=,cmd= | awk -v day=$(ps -eo stime --sort=stime | egrep -v "^[0-9]+:" | tail -n 1 | xargs -I {} sh -c 'echo {} | egrep -o "^.....$"') '{if($1 ~ /[0-9]{2}:[0-9]{2}/) {printf "%s%d %s %s %s\n",substr(day,1,4),substr(day,5,1) + 1, $2, $3, $4;} else { print $0 }}' | sort -k 1 -M -k 2 | awk '{print $0}' | head

@@ -1,0 +1,1 @@
+ps -eo size --group root | awk '{i+=$0} END{print i}'

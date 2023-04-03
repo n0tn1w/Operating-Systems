@@ -1,0 +1,1 @@
+ps -eo user= | sort | uniq | egrep -v "$(who | cut -d' ' -f1)"

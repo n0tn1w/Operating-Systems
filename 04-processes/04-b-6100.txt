@@ -1,0 +1,1 @@
+ ps -eo cmd,user | egrep 'vim' | tr -s ' ' | awk '{seen[$NF]} END {for(i in seen) {if(seen[i] >= 2) {print i}}}'

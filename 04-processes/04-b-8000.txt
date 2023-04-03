@@ -1,0 +1,1 @@
+ps -eo pid=,tname=,cmd= | tr -s ' ' | awk '{if($2 != "?") {print $1,$3}}'
