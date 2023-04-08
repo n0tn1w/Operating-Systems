@@ -1,0 +1,14 @@
+read a b 
+
+if [[ ! -n a ]] || [[ ! -n b ]]; then 
+    echo "No param"
+    exit 1;
+fi
+
+if [[ ! -f ${a} ]]; then 
+    echo "No such file"
+    exit 1;
+fi
+
+cat ${a} | egrep -q "${b}" 
+echo "${?}"

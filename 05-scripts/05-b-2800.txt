@@ -1,0 +1,12 @@
+#!/bin/bash
+
+if [ ! $# -eq 1 ]; then
+    echo "Invalid number of params"
+    exit 1
+fi
+
+if  echo "$1" | egrep -q  '^[a-zA-Z0-9]+$'  ; then
+    echo "Valid"
+    exit 1
+fi
+echo "Invalid"

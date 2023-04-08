@@ -1,0 +1,8 @@
+#!/bin/bash
+
+if [ ! $# -eq 1 ]; then
+    echo "Invalid number of params";
+    exit 1;
+fi
+
+echo "Number of files in ${1} is $(find $1 2> /dev/null | wc -l)" 

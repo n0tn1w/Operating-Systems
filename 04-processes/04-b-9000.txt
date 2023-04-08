@@ -1,1 +1,5 @@
 ps -ef | tr -s ' ' | awk '{ids[$2] = $3;arr[$3]++} END {for( i in arr){ for(c in ids) { if(ids[c] == i){ if(arr[c] > arr[i]) {print c}  }} }}'
+
+
+
+

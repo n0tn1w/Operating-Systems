@@ -1,0 +1,49 @@
+#!/bin/bash
+
+if [[ ! $# -eq 3 ]]; then
+    echo "Invald number of params"
+    exit 1;
+fi
+
+count=0;
+main=$(cat /etc/passwd | cut -d ':' -f1,5 | cut -d ',' -f1 | egrep "$2"  | tr '\n' '|')
+parms=$(echo $main | tr '|' '\n' | wc -l) 
+arr=()
+
+
+if [[ $parms -eq 0 ]]; then
+
+    echo "No such name in /etc/passwd"
+    exit 1;
+fi
+
+old_IFS="${IFS}"
+IFS='|'
+
+for line in $main; do
+    name=$(echo $line | cut -d":" -f1)
+    
+    if [[ $parms -gt 1 ]]; then
+
+        echo "${count} ${line}"
+    fi  
+
+    arr[$count]=$name
+    ((count++))
+done
+IFS="${old_IFS}"
+
+number=0
+
+if [[ $parms -gt 1 ]]; then
+    echo "Select a number"
+    read number
+
+    if [[ ! $count -gt $number || ! $number -gt 0 ]]; then
+        echo "Invalid index"
+        exit 1
+    fi  
+fi
+
+echo "Username ${3} for ${arr[$number]} inside $1.txt" 
+echo "${3} ${arr[$number]}" >> $1.txt

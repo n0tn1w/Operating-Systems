@@ -1,0 +1,7 @@
+#!/bin/bash
+
+if [ ! $# -eq 3 ]; then
+    echo "Invalid number of params"
+fi
+
+paste $1 $2 | sort > $3

@@ -1,0 +1,14 @@
+#!/bin/bash 
+ 
+if [ ! $# -eq 1 ]; then 
+    echo "Invalid number of params" 
+    exit 1; 
+fi 
+ 
+for f in $(who | awk '{print $1}' | egrep "$1" | wc -l); do  
+    if [ ${f} -eq 0 ]; then  
+        echo "Invalid username" 
+        exit 1; 
+    fi  
+    echo "${f}"; 
+done

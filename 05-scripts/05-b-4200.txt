@@ -1,0 +1,33 @@
+if [ ! $# -eq 1 ]; then
+    echo "Invalid number of params"
+    exit 1;
+fi
+
+if [ ! -f $1 ]; then
+    echo "No such file exist"
+    exit 1;
+fi
+
+count=0
+max=0
+
+for braket in $(cat $1 | egrep -o [{}]); do
+
+    if [[ ${braket} == "{" ]]; then
+        ((count++))
+    else
+        ((count--))
+    fi  
+    
+    if [[ ${count} -gt ${max} ]]; then
+        max=$count 
+    fi  
+
+done
+
+if [[ ${max} < 0 ]]; then
+    echo "Error!"
+    exit 1
+fi
+
+echo "The deepest nesting is ${max} levels"
