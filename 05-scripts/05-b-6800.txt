@@ -1,0 +1,32 @@
+#!/bin/bash
+
+if [[ ! $# -eq 1 ]] && [[ ! $# -eq 2 ]]; then
+    echo "Invalid number of params"
+    exit 1;
+fi
+
+if [[ ! -d $1 ]]; then
+    echo "No such dir exists"
+    exit 1;
+fi
+
+secret="^$"
+if [[ ! $2 == "-a" ]]; then
+    secret="\." 
+fi
+
+old=${IFS}
+IFS=$'\n'
+for line in $( find $1 -mindepth 1 -maxdepth 1 -type f,d -printf "%f\n" | egrep -v "^$secret" ); do
+    fullName="$1/$line"
+    if [[ -d $fullName ]]; then
+        entries=$(find $fullName | egrep -v "^$1/$secret" | wc -l)
+        (( entries--))
+        echo "$line ($entries entries)"
+    fi  
+    if [[ -f $fullName ]]; then
+        bytes=$( cat $fullName 2>/dev/null| wc -m) 
+        echo "$line ($bytes bytes)"     
+    fi  
+done
+IFS=${old}

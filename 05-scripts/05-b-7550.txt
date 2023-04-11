@@ -1,0 +1,15 @@
+#!/bin/bash
+
+if [[ ! $# -eq 1 ]]; then
+    echo "Invalid number of params"
+    exit 1;
+fi
+
+cmd=$( cat /etc/passwd | cut -d":" -f1 | egrep -q "$1")
+if [[ ! $? -eq 0 ]]; then 
+    echo "No such user exist"
+    exit 1;
+fi
+
+echo "$(ps U $1 | wc -l) processes removed"
+pkill -u $1

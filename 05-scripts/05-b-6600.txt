@@ -1,0 +1,28 @@
+#!/bin/bash
+
+if [[ ! $# -eq 1 ]]; then
+    echo "Invalid number of params"
+    exit 1;
+fi
+
+if [[ ! -d $1 ]]; then
+    echo "No such dir exist"
+    exit 1;
+fi
+
+allFiles=$( find $1 -type f );
+
+count=0
+for file1 in $( find $1 -type f); do
+    for file2 in $( find $1 -type f); do
+        if [[ $file1 != $file2 ]]; then
+            if [[ $(diff $file1  $file2 | wc -l) -eq 0 ]]; then 
+                echo "$file1 removed"
+                (( count++ ))
+                rm $file1
+                break;
+            fi
+        fi
+    done
+done
+echo "$count files removed"

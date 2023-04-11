@@ -1,0 +1,32 @@
+#!/bin/bash
+
+if [[ $# -eq 0 ]]; then
+    echo "Invalid number of params"
+    exit 1;
+fi
+
+for line in $@; do  
+    if [[ -f $line ]]; then
+        if [[ -r $line ]]; then
+            echo "$line is readable"
+        else
+            echo "$line is not readable"
+        fi
+    elif [[ -d $line ]]; then
+        numOfFiles=$( find $line -type f | wc -l)
+        if [[ $numOfFiles -eq 0 ]]; then 
+            echo "$line no files in dir"
+        else
+            echo "Files in $line which are smaller than $numOfFiles"
+    
+            oldIFS=$IFS
+            IFS=$'\n'
+            for file in $( find $line -type f -size -$numOfFiles); do  
+                echo $file  
+            done
+            IFS=$oldIFS
+        fi
+    else
+        echo "Param is not a file or dir"
+    fi  
+done

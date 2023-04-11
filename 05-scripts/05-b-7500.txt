@@ -1,0 +1,52 @@
+#!/bin/bash
+
+if [[ ! $# -eq 2 ]]; then
+    echo "Invalid number of params"
+    exit 1;
+fi
+
+cmd1=$(echo $1 | egrep -q "^[-]?[0-9]+$")
+if [[ ! $? -eq 0 ]]; then
+    echo "Param 1 is not a number"
+    exit 1;
+fi
+
+cmd2=$(echo $2 | egrep -q "^[-]?[0-9]+$")
+if [[ ! $? -eq 0 ]]; then
+    echo "Param 2 is not a number"
+    exit 1;
+fi
+
+if [[ $1 -gt $2 ]]; then
+    echo "Invalid interval"
+    exit 1;
+fi
+
+guess=$(( (RANDOM % $2) + $1 ))
+
+count=0;
+while true; do
+    echo -n "Guess?"
+
+    read input
+    (( count++ ))
+
+    cmdInput=$(echo $input | egrep -q "^[-]?[0-9]+$")
+    if [[ ! $? -eq 0 ]]; then
+        echo "$input is not a number"
+        continue;
+    fi  
+    if [[ $input -gt $2 ]] || [[ $input -lt $1 ]]; then
+        echo "$input is not in the range [$1; $2]"
+        continue;
+    fi  
+
+    if [[ $input -gt $guess ]]; then
+        echo "...smaller!"
+    elif [[ $input -lt $guess ]]; then
+        echo "...bigger!"
+    else
+        echo "RIGHT! Guessed $guess in $count tries!"
+        break;
+    fi  
+done

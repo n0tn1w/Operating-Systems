@@ -1,0 +1,29 @@
+#!/bin/bash
+
+if [[ ! $# -eq 2 ]]; then
+    echo "Invalid number of params"
+    exit 1;
+fi
+
+if [[ ! -d $1 ]]; then
+    echo "No such dir exist"
+    exit 1;
+fi
+
+echo $2 | egrep -q "^[-]?[0-9]+$"
+if [[  $? -eq 1 ]]; then
+    echo "$2 is not a number"
+    exit 1;
+fi
+
+if [[ $2 -lt 0 ]]; then
+    echo "Number should be positive"
+    exit 1;
+fi
+
+oldIFS=$IFS
+IFS=$'\n'
+for file in $( find $1 -type f -size -$2); do  
+    echo $file
+done
+IFS=$oldIFS

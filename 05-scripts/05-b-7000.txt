@@ -1,0 +1,25 @@
+#!/bin/bash
+
+if [[ $# -eq 0 ]]; then
+    echo "Invalid number of params"
+    exit 1;
+fi
+
+read str 
+if [[ -z $str ]]; then
+    echo "Empty string"
+    exit 1;
+fi
+
+for file in $@; do  
+    if [[ -f $file ]]; then
+        linesCnt=$(cat $file | egrep -c "$str")
+        if [[ $linesCnt -eq 0 ]]; then
+            echo "$file - no maching lines" 
+        else 
+            echo "$file - $linesCnt mached lines" 
+        fi
+    else
+        echo "$file is not a file"
+    fi  
+done

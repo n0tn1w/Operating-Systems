@@ -1,0 +1,23 @@
+#!/bin/bash
+
+if [[ ! $# -eq 1 ]]; then
+    echo "Invalid number of params"
+    exit 1;
+fi
+
+userOnline=$(users | tr ' ' '\n'| egrep -q "^$1$");
+if [[ ! $? -eq 0 ]]; then
+    echo "User has no processes"
+    exit 1;
+fi
+
+IFS=$'\n'
+for data in $(ps U s0600094 -o rss=,vsize=,cmd=  | tr -s ' ' | cut -d' ' -f2- | sort -k 2 -n -r); do
+
+    vsz=$(echo $data | cut -d' ' -f2)
+    rss=$(echo $data | cut -d' ' -f1)
+    cmd=$(echo $data | cut -d' ' -f3-)
+
+    ratio=$(echo "scale=2; $vsz/$rss" | bc)
+    echo "Command $cmd with VSZ/RSS ratio: $ratio"
+done

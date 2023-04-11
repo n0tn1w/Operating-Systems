@@ -1,3 +1,5 @@
+#!/bin/bash
+
 if [[ ! $# -eq 3 ]]; then
     echo "Invalid number of parmas"
     exit 4;
