@@ -1,0 +1,32 @@
+#!/bin/bash
+
+if [[  ! $# -eq 1 ]]  && [[ ! $# -eq 2 ]]; then
+    echo "Invalid number of params"
+    exit 1;
+fi
+
+if [[ ! -d $1 ]]; then
+    echo "This direcotry doesnt exit"
+    exit 1;
+fi
+
+dest="/home/students/s0600094/$(date | cut -d' ' -f2 )"
+
+if [[ -n $2 ]]; then
+    dest="$2"
+fi
+
+if [[ ! -d ${dest} ]]; then
+    mkdir ${dest}
+fi
+
+count=0
+for fileName in $(find $1 -maxdepth 1 -type f -mmin -45); do
+
+    if [[ -r ${fileName} ]]; then 
+        (( count++ ))
+        cp ${fileName} ${dest} 
+    fi  
+done
+
+echo "${count} files transfered to ${dest}"

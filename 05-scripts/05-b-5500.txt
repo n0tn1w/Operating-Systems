@@ -1,0 +1,24 @@
+echo "<table>"
+
+touch ~/temp.txt
+(echo "Username:a:b:group:login shell:c:GECOS") > ~/temp.txt
+
+fold_IFS="${IFS}"
+IFS=$'\n'
+for line in $( cat ~/temp.txt /etc/passwd | head ); do
+    echo -e "  <tr>"
+    
+    changed=$(echo $line | cut -d":" -f 1,4,5,7)
+
+    IFS=':'
+    for param in $changed; do
+        echo -e "    <th>$param</th>"
+    done
+    IFS=$'\n'
+
+    echo -e "  <tr>"
+done
+
+IFS="${fold_IFS}"
+echo "</table>"
+rm ~/temp.txt

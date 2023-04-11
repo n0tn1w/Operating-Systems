@@ -1,0 +1,35 @@
+if [[ ! $# -eq 1 ]] && [[ ! $# -eq 2 ]]; then
+    echo "Invalid number of params"
+    exit 1;
+fi
+
+del=' ';
+
+if [[ -n $2 ]]; then
+    del=$2
+fi
+
+if [[ -z $(echo $1 | egrep "^[-]?[0-9]+$") ]]; then
+    echo "NaN"
+    exit 1;
+fi
+
+len=$(echo $1 | wc -c) 
+((len--))
+
+index=0
+str=$(echo $1 | rev)
+res=""
+
+for (( i=$index; i<$len; i+=3 )); do
+
+    if (( i + 3 >= len )) ; then 
+        res+=${str:$i:3}
+        break;
+    fi  
+
+    res+=${str:$i:3} 
+    res+=$del
+done
+
+echo $( echo $res | rev )

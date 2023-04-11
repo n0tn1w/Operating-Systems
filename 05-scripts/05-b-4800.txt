@@ -1,0 +1,32 @@
+if [[ ! $# -eq 2 ]]; then
+    echo "Invalid number of params"
+    exit 1;
+fi
+
+if [[ ! -d $2 ]]; then
+    echo "Dir doesnt exist"
+    exit 1;
+fi
+
+if [[ ! -f $1 ]]; then
+    echo "File doesnt exist"
+    exit 1;
+fi
+
+exits=1
+for file in $(find $2 -type f -readable); do
+    if [[ $(diff $file $1 | wc -l) -eq 0 ]]; then
+    
+        if [[ $exits -eq 1 ]]; then
+            echo "Matchess"
+        fi
+
+        echo $file
+        exits=0
+    fi  
+done
+
+if (( exits == 1 )); then
+    echo "No matches found"
+    exit 1
+fi

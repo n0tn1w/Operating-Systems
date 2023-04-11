@@ -1,0 +1,19 @@
+if [[ ! $# -eq 3 ]]; then
+    echo "Invalid number of parmas"
+    exit 4;
+fi
+
+for input in $@; do
+    if [[ -z $(echo ${input} | egrep "^[-]?[0-9]$") ]]; then
+        exit 3;  
+    fi  
+done
+
+if [[ $2 -gt $3 ]]; then
+    exit 2;
+fi
+
+if [[ $1 -ge $2 ]] && [[ $1 -le $3 ]]; then 
+    exit 0;
+fi
+exit 1;
