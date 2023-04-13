@@ -1,0 +1,45 @@
+#!/bin/bash
+
+if [[ $# -eq 0 ]]; then
+    echo "Invalid number of params"
+    exit 1;
+fi
+
+rec=0
+
+if [[ $1 == "-r" ]]; then
+    rec=1
+    shift 1
+fi
+
+date=$(date | cut -d" " -f1 | awk -F. '{printf "%s-%s-%s", $3, $2, $1}')
+time=$(date | cut -d" " -f3)
+timestamp="[$date $time]"
+
+for path in $@; do  
+    if [[ -f $path ]]; then
+
+        rm $path
+        ( echo "$timestamp Removed file $path" ) >> $RMLOG_FILE
+
+    elif [[ -d $path ]]; then
+
+        numOfFiles=$(find $path -type f | wc -l)
+    
+        if [[ $rec -eq 1 ]]; then
+
+            rm -r $path
+            ( echo "$timestamp Removed directory recursively $path" ) >> $RMLOG_FILE
+
+        elif [[ $numOfFiles -ge 1 ]]; then
+
+            ( echo "$timestamp Cannot remove $path" ) >> $RMLOG_FILE
+
+        else
+            rm -d $path
+            ( echo "$timestamp Removed dircetory $path" ) >> $RMLOG_FILE
+        fi
+    else
+        ( echo "$timestamp $path is not a file or dir" ) >> $RMLOG_FILE
+    fi  
+done

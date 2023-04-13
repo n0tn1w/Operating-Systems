@@ -1,0 +1,39 @@
+#!/bin/bash
+
+if [[ ! $# -eq 1 ]]; then
+    echo "Invalid number of params"
+    exit 1;
+fi
+
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+BLUE='\033[0;34m'
+NC='\033[0m'
+STARTING=$NC
+
+if [[ $1 == "-r" ]]; then
+    STARTING=$RED
+elif [[ $1 == "-g" ]]; then
+    STARTING=$GREEN
+elif [[ $1 == "-b" ]]; then
+    STARTING=$BLUE
+elif [[ $1 == "-x" ]]; then
+    STARTING=$NC
+else 
+    echo "Invalid color"
+    exit 1;
+fi
+
+
+while read line; do
+
+    if [[ "$STARTING" == "$RED" ]]; then
+        STARTING=$GREEN
+    elif [[ "$STARTING" == "$GREEN" ]]; then
+        STARTING=$BLUE
+    elif [[ "$STARTING" == "$BLUE" ]]; then
+        STARTING=$RED
+    fi  
+
+    echo -e "$STARTING$line$NC"
+done

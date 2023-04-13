@@ -1,0 +1,68 @@
+#!/bin/bash
+
+if [[ ! $# -eq 2 ]] || [[ ! $# -eq 1 ]]; then
+    echo "Invalid number of params"
+    exit 1;
+fi
+
+dir=$PWD
+if [[ -n $2 ]]; then
+    if [[ ! -d $2 ]]; then
+        echo "$2 is not a dir"
+        exit 1;
+    fi
+    dir=$2
+fi
+
+
+if [[ "$1" == "-l" ]]; then
+    
+    for file in (find $BACKUP_DIR -type f); do
+        datetime=$( echo $file | egrep -o "_[0-9-]{19}(\.[^\.]+)+$" | egrep -o "[0-9-]{19}")    
+        date=$( echo $datetime | cut -d"-" -f1-3 | sed -e 's:-:/:g')    
+        time=$( echo $datetime | cut -d"-" -f4-6 | sed -e 's:-:/:g')    
+        fileName= $( echo $file | egrep -o ".+(\.[^\.]+)+_" | sed -e 's/.$//g')
+        echo "$fileName ($date $time)"
+    done
+
+else 
+    countOfFilesWithSameName=0
+    fileNameShort=""
+
+    for file in (find $BACKUP_DIR -type f); do
+        fileNameShort= $( echo $file | egrep -o ".+(\.[^\.]+)+_" | sed -e 's/.$//g')
+        if [[ "$1" == "$fileNameShort" ]]; then
+            (( countOfFilesWithSameName++ ))
+            fileNameShort="$1"
+        fi
+    done
+    
+    if [[ $countOfFilesWithSameName -eq 0 ]]; then
+        echo "$1 doesnt exist"
+        exit 1;
+    elif [[ $countOfFilesWithSameName -eq 1 ]]; then
+        fullFileName=$( find $BACKUP_DIR -type f | egrep "^$fileNameShort" | head -n 1)
+        tar -xzf $fullFileName -C $dir
+    else
+        count=1
+        array=()
+        for file in (find $BACKUP_DIR -type f | egrep "^$fullFileName"); do  
+            datetime=$( echo $file | egrep -o "_[0-9-]{19}(\.[^\.]+)+$" | egrep -o "[0-9-]{19}")    
+            date=$( echo $datetime | cut -d"-" -f1-3 | sed -e 's:-:/:g')    
+            time=$( echo $datetime | cut -d"-" -f4-6 | sed -e 's:-:/:g')    
+            fileName= $( echo $file | egrep -o ".+(\.[^\.]+)+_" | sed -e 's/.$//g')
+            echo "($count) $fileName ($date $time)" echo 
+         array[count]=$file 
+        done 
+         
+        read index 
+ 
+        if [[ $index -lt 1 ]] || [[ $index -gt $count ]]; then 
+            echo "Invalid inex" 
+            exit 1; 
+        fi 
+     
+        tar -xzf $array[index] -C $dr 
+    fi 
+fi 
+   

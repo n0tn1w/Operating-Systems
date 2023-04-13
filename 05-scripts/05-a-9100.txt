@@ -1,0 +1,41 @@
+#!/bin/bash
+
+if [[ ! $# -eq 2 ]]; then
+    echo "Invalid number of params"
+    exit 1;
+fi
+
+if [[ ! -d $1 ]]; then
+    echo "$1 is not a dir"
+    exit 1;
+fi
+
+if [[ ! -d $2 ]]; then
+    echo "$2 is not a dir"
+    exit 1;
+fi
+
+for extensions in $(find $1 -type f | egrep -o "\.[a-zA-Z0-9]+$" | sort | uniq | sed s/\\.//g); do
+    dirPath=$2/$extensions
+    if [[ ! -d $dirPath ]]; then
+        mkdir $dirPath
+    fi  
+done
+
+count=0
+for dir in $(find $2 -type d | egrep -o "/[a-zA-Z0-9]+$" | sed s:/::g); do
+    oldIFS=$IFS
+    IFS=$'\n'
+    for file in $(find $1 -type f | egrep "\.$dir$"); do
+        dest=$2/$dir
+    
+        exists=$dest$(echo $file | egrep -o "/[a-zA-Z0-9.]+$")
+        if [[ ! -f $exists ]]; then
+            cp $file $dest
+            (( count++ ))
+        fi
+    done
+    IFS=$old
+done
+
+echo "$count files copied to $2"

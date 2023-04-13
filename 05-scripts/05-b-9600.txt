@@ -1,0 +1,101 @@
+#!/bin/bash
+
+if [[ $# -eq 0 ]]; then
+    echo "Invalid number of params"
+    exit 1;
+fi
+BACKUP_DIR="/home/students/s0600094/.backup/"
+
+rec=0
+
+if [[ $1 == "-r" ]]; then
+    rec=1
+    shift 1
+fi
+
+date=$(date | cut -d" " -f1 | awk -F. '{printf "%s-%s-%s", $3, $2, $1}')
+time=$(date | cut -d" " -f4 | awk -F: '{printf "%s-%s-%s", $1, $2, $3}')
+timestamp="_$date-$time"
+
+for path in $@; do  
+    if [[ -f $path ]]; then
+        fileName=$(echo $path | egrep -o "/[^/]*$" | sed 's:/::g')
+        root="$BACKUP_DIR$fileName$timestamp.gz"
+
+        tar -czf $root $path 2>/dev/null 
+#        rm $path
+
+    elif [[ -d $path ]]; then
+
+        numOfFiles=$(find $path -type f | wc -l)
+        dirName=$(echo $path | sed -e 's:/$::g' | egrep -o "/[^/]*$"| sed -e 's:/::g')
+        root="$BACKUP_DIR$dirName$timestamp.tgz"
+
+        if [[ $rec -eq 1 ]]; then
+
+            tar -czf $root $path 2>/dev/null 
+#            rm -r $path
+
+        elif [[ $numOfFiles -ge 1 ]]; then
+            echo "error: $path is not empty, will not delete"
+        else
+
+            tar -czf $root $path 2>/dev/null 
+#            rm -d $path
+
+        fi
+    else
+        echo "No such file or dir exists"   
+    fi  
+done
+#!/bin/bash
+
+if [[ $# -eq 0 ]]; then
+    echo "Invalid number of params"
+    exit 1;
+fi
+BACKUP_DIR="/home/students/s0600094/.backup/"
+#Can be removed
+
+rec=0
+
+if [[ $1 == "-r" ]]; then
+    rec=1
+    shift 1
+fi
+
+date=$(date | cut -d" " -f1 | awk -F. '{printf "%s-%s-%s", $3, $2, $1}')
+time=$(date | cut -d" " -f4 | awk -F: '{printf "%s-%s-%s", $1, $2, $3}')
+timestamp="_$date-$time"
+
+for path in $@; do  
+    if [[ -f $path ]]; then
+        fileName=$(echo $path | egrep -o "/[^/]*$" | sed 's:/::g')
+        root="$BACKUP_DIR$fileName$timestamp.gz"
+
+        tar -czf $root $path 2>/dev/null 
+        rm $path
+
+    elif [[ -d $path ]]; then
+
+        numOfFiles=$(find $path -type f | wc -l)
+        dirName=$(echo $path | sed -e 's:/$::g' | egrep -o "/[^/]*$"| sed -e 's:/::g')
+        root="$BACKUP_DIR$dirName$timestamp.tgz"
+
+        if [[ $rec -eq 1 ]]; then
+
+            tar -czf $root $path 2>/dev/null 
+            rm -r $path
+
+        elif [[ $numOfFiles -ge 1 ]]; then
+            echo "error: $path is not empty, will not delete"
+        else
+
+            tar -czf $root $path 2>/dev/null 
+            rm -d $path
+
+        fi
+    else
+        echo "No such file or dir exists"   
+    fi  
+done
