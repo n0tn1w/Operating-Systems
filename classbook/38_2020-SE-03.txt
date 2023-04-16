@@ -1,0 +1,111 @@
+#!/bin/bash
+
+RED='\033[0;31m'
+ORANGE='\033[38;5;208m'
+GREEN='\033[0;32m'
+NC='\033[0m'
+
+if [[ ! $# -eq 2 ]]; then
+    echo -e "${RED}Invalid number of params${NC}"
+    exit 1;
+fi
+
+zipFolder=$( echo "$1" | sed -E 's:/$::g')
+fromFolder=$( echo "$2" | sed -E 's:/$::g')
+
+#Check dest structure($zipFolder - zip)
+if [[ -d $zipFolder ]]; then
+    if [[ ! -f "$zipFolder/db" ]]; then
+        echo -e "${RED}$zipFolder/db doesnt exits${NC}"
+        exit 1;
+    fi  
+
+    if [[ ! -d "$zipFolder/packages" ]]; then
+        echo -e "${RED}$zipFolder/packages doesnt exits${NC}"
+        exit 1;
+    fi  
+    
+    filesCnt=$( find $zipFolder -maxdepth 1 -type f,d | wc -l)
+    if [[ ! $filesCnt -eq 3 ]]; then
+        echo -e "${RED}Incorrect format of dest dir $zipFolder${NC}"
+        exit 1;
+    fi  
+
+else
+    echo -e "${RED}$zipFolder is not a dir${NC}"
+    exit 1;
+fi
+
+#Check source structure($fromFolder - normal)
+if [[ -d $fromFolder ]]; then
+    if [[ ! -f "$fromFolder/version" ]]; then
+        echo -e "${RED}$fromFolder/version doesnt exits${NC}"
+        exit 1;
+    else
+        #Check version
+        cat "$fromFolder/version" | egrep -q "^[0-9]+\.[0-9]+\.[0-9]+\-[0-9]+$"
+        if [[ ! $? -eq 0 ]]; then
+            echo -e "${ORANGE}Incorrect version format in $fromFolder${NC}"
+            exit 1;
+        fi
+    fi  
+
+    if [[ ! -d "$fromFolder/tree" ]]; then
+        echo -e "${RED}$fromFolder/tree doesnt exits${NC}"
+        exit 1;
+    fi  
+
+    filesCnt=$( find $fromFolder -maxdepth 1 -type f,d | wc -l)
+    if [[ ! $filesCnt -eq 3 ]]; then
+        echo -e "${RED}Incorrect format of dir $fromFolder${NC}"
+        exit 1;
+    fi  
+
+else
+    echo -e "${RED}$fromFolder is not a dir${NC}"
+    exit 1;
+fi
+
+#Archire $fromFolder/tree and get names 
+versionName=$(cat $fromFolder/version)
+entryName=$fromFolder-$versionName 
+tar -cJf $entryName.tar.xz -C $fromFolder/tree .
+
+sha=$(sha256sum $entryName.tar.xz | cut -d" " -f1) 
+file="$zipFolder/packages/$sha.tar.xz"
+
+#Check if version is present
+line=$(cat "$zipFolder/db" | egrep "^$entryName")
+if [[ -z $line ]]; then
+
+    #Check if lib with same content exists
+    if [[ -f $file ]]; then
+        echo -e "${ORANGE}A library with same content already exists${NC}"
+        rm $entryName.tar.xz
+        exit 1;
+    fi  
+
+    mv $entryName.tar.xz $file
+    echo "$entryName $sha" >> "$zipFolder/db"
+    sort -o $zipFolder/db $zipFolder/db
+
+    echo -e "${GREEN}Succefully added $entryName to $zipFolder"
+else
+    oldFile=$(echo $line | cut -d" " -f2)
+    
+    #Check if lib with same content exists
+    if [[ -f $file ]]; then
+        echo -e "${ORANGE}A library with same content already exists${NC}"
+    #   rm $entryName.tar.xz
+        exit 1;
+    fi  
+    
+    #Change the line inside /db
+    sed -i "s/^$entryName .*$/$entryName $sha/g" "$zipFolder/db"
+    sort -o $zipFolder/db $zipFolder/db
+    
+    rm $zipFolder/packages/$oldFile.tar.xz
+    mv $entryName.tar.xz $file 
+
+    echo -e "${GREEN}Succefully updated $entryName in $zipFolder"
+fi

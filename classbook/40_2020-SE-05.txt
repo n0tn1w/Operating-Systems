@@ -1,0 +1,110 @@
+#!/bin/bash
+
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+ORANGE='\033[38;5;208m'
+NC='\033[0m'
+
+if [[ ! $# -eq 3 ]]; then
+    echo -e "${RED}Invalid number of params${NC}"
+    exit 1;
+fi
+
+#Validate first file (username:pasword_hash)
+if [[ -f $1 ]]; then
+    oldIFS=$IFS
+    IFS=$'\n'
+    
+    for line in $(cat $1); do  
+        echo $line | egrep -q "^[^:]+:[^:]+$"
+        if [[ ! $? -eq 0 ]]; then
+            echo -e "${RED}$1 is not in valid format${NC}"
+            exit 1;
+        fi
+    done
+
+    IFS=$oldIFS 
+else
+    echo -e "${ORANGE}$1 doesnt exist${NC}"
+    touch $1
+    echo -e "${GREEN}Created $1${NC}"
+fi
+
+#Validate second file (union of valid files)
+if [[ -f $2 ]]; then
+    echo -e "${ORANGE}$2 already exist${NC}"
+else 
+    touch $2
+fi
+
+#Validate folder with .cfg files inside
+#And add there content to $2 file
+if [[ -d $3 ]]; then
+    oldIFS=$IFS
+    IFS=$'\n'
+
+    #Will count the number of valid files
+    cntOfValidFiles=0
+
+    for file in $(find $3 -type f); do  
+        echo $file | egrep -q ".cfg"
+        if [[ $? -eq 0 ]]; then
+            #Will count number of errors in current file
+            errorInFile=0
+
+            for line in $(cat $file); do  
+                echo $line | egrep -q "(^#|^{.*};?$|$\n)"
+
+                if [[ ! $? -eq 0 ]]; then
+
+                    #Will print the message before the first error
+                    if [[ $errorInFile -eq 0 ]]; then
+                        echo -e "${ORANGE}Error in $file${NC}"
+                    fi
+
+                    #Get exact line in the file
+                    lineRegex="^$line$"
+                    lineNumber=$(cat $file | awk -v srch="$lineRegex" '{ if ( $0 ~ srch ) { print NR}}')
+
+                    echo "Line $lineNumber: $line"
+                    (( errorInFile++ ))
+                fi
+            done
+
+            if [[ $errorInFile -eq 0 ]]; then
+                (( cntOfValidFiles++ ))  
+                cat $file  >> $2    
+            fi
+        fi
+    done
+
+    if [[ $cntOfValidFiles -eq 0 ]]; then
+        echo -e "${ORANGE}No valid files inside $3${NC}"
+    else 
+        echo -e "${GREEN}$cntOfValidFiles valid files fount in $3${NC}"
+    fi  
+
+    IFS=$oldIFS
+else
+    echo -e "${RED}Dir $3 doesnt exist${NC}"
+    exit 1;
+fi
+
+#Insert name and pass into pass file ($1)
+oldIFS=$IFS
+IFS=$'\n'
+
+fileName=$( echo $2 | sed  's:\.cfg$::g' )
+#Check if there is already entry with same name
+cat $1 | cut -d":" -f1 | egrep -q "^$fileName$"
+
+if [[ ! $? -eq 0 ]]; then
+    pass=$( pwgen 16 1 )
+    sum=$( echo "$pass" | md5sum | cut -d" " -f1 )
+    insertLine="$fileName:$sum"
+
+    echo $insertLine >> $1  
+    echo -e "${GREEN}$fileName was added into $1${NC}"
+else
+    echo -e "${ORANGE}$fileName already exist in $1${NC}"
+fi

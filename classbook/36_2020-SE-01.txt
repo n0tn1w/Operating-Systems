@@ -1,0 +1,85 @@
+#!/bin/bash
+
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+ORANGE='\033[38;5;208m'
+NC='\033[0m'
+
+if [[ ! $# -eq 2 ]]; then
+    echo -e "${RED}Invalid number of params${NC}"
+    exit 1;
+fi
+
+if [[ ! -f $1 ]]; then
+    echo -e "${RED}$1 is not a file"
+    exit 1;
+fi
+
+if [[ ! -d $2 ]]; then
+    echo -e "${RED}$2 is not a dir"
+    exit 1;
+fi
+
+#Check if there are any valid files inside $2
+count=0
+for file in $( find $2 -type f); do  
+    
+    validLines=$( cat $file | egrep "^." | wc -l)
+    if [[ $validLines -eq 11 ]]; then
+        (( count++ ))
+    fi  
+done
+
+if [[ $count -eq 0 ]]; then
+    echo -e "${ORANGE}No valid files in $2"
+    exit 1;
+fi
+
+#Print files into $1
+entriesCnt=0
+oldIFS=$IFS
+IFS=$'\n'
+
+for file in $( find $2 -type f); do  
+    
+    cntValidLines=$( cat $file | egrep "^." | wc -l)
+    if [[ $cntValidLines -eq 11 ]]; then
+    
+        #Insert fileName of $file into $1
+        fileName=$( echo $file | egrep -o "\/[^\/]+$" | sed -e 's:/::g' | cut -d"." -f1);   
+        echo -n $fileName >> $1  
+
+        #Insert rest of the $file data into $1
+        index=1
+        for validLine in $( cat $file | egrep "^." ); do
+
+            #First text line is not used and the 9th is not the same format as the rest 
+            if (( index > 1 )) && (( index != 9 )); then
+                echo -n ',' >> $1
+
+                echo -n "$(echo $validLine | cut -d":" -f2 | sed -E 's/^( )+//g' | sed -E 's/( )+$//g')" >> $1
+
+            elif (( index == 9 )); then
+                echo -n ',' >> $1
+
+                #Removing text and spaces from the special column 
+                echo -n "$(echo $validLine | sed -E 's:This platform has a(n)?::g' | sed -E 's:license.$::g' | sed -E 's:^( )+::g' | sed -E 's:( )+$::g')" >> $1
+
+            fi
+
+            (( index++ ))
+        done
+        echo -ne '\n' >> $1
+        (( entriesCnt++ ))
+    fi
+
+done
+IFS=$oldIFS
+
+#Print the number of added entries into $1
+if [[ ! $entriesCnt -eq 0 ]]; then
+    echo -e "${GREEN}$entriesCnt entries added into $1${NC}"
+else
+    echo -e "${ORANGE}No entries added to $1${NC}"
+fi
+

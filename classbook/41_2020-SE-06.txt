@@ -1,0 +1,69 @@
+#!/bin/bash
+
+RED='\033[0;31m'
+ORANGE='\033[38;5;208m'
+GREEN='\033[0;32m'
+NC='\033[0m'
+
+if [[ ! $# -eq 3 ]]; then
+    echo -e "${RED}Invalid number of params${NC}"
+    exit 1;
+fi
+
+#Check validity of file ($1)
+if [[ -f $1 ]]; then
+    oldIFS=$IFS
+    IFS=$'\n'
+
+    for line in $( cat $1); do  
+        echo $line | egrep -q "^\s*[a-zA-Z0-9_]+\s*=\s*[a-zA-Z0-9_]+\s*(#.*)?$|$'\n'|^#"
+    
+        if [[ ! $? -eq 0 ]]; then
+            echo -e "${RED}$1 is not a valid file${NC}"
+            exit 1;
+        fi
+    done
+    
+    uniq=$( cat $1 | cut -d"=" -f1 | sed -E 's:^[ ]+::g' | sed -E 's:[ ]+$::g' | egrep -v "#" | egrep "^." | sort | uniq -c | sort -r | head -n 1 | tr -s " " | cut -d" " -f 2 )
+    if [[ $uniq -gt 1 ]]; then
+        echo -e "${RED}FIle $1 doesnt have uniq keys${NC}"
+        exit 1;
+    fi  
+
+else
+    echo -e "${RED}$1 file doesnt exist${NC}"
+    exit 1;
+fi
+
+#Create the date
+#date=$( date "+%a %b %d %H:%M:%S %Z %Y")
+date=$( date )
+user=$( id -un)
+
+#Insert the key ($2) exist in file ($1)
+line=$( cat $1 | egrep "^\s*$2\s*=" )
+lineAdded=$( echo "${2} = $3 # added at $date by $user" )
+
+if [[ -n $line ]]; then
+    #If key already exists
+    key="^\\\\s*$2\\\\s*="
+    lineNum=$( cat $1 | awk -v srch=$key '{ if ( $0 ~ srch) { print NR } }')
+
+    #Change old line
+    text="# edited at $date by $user"
+    sed -i "${lineNum}s/.*/# ${line} ${text}/" $1
+
+    #Add new line
+    (( lineNum++ ))
+    nextLine="$2 = $3 $text"
+    sed -i "${lineNum}i ${lineAdded}" $1
+
+    (( lineNum-- ))
+    echo -e "${GREEN}Change made to $lineNum with key $2 into $1${NC}"
+else
+    #If key doesnt exist
+    echo $lineAdded >> $1
+
+    echo -e "${GREEN}Added key $2 into $1${NC}"
+fi
+

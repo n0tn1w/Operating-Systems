@@ -1,0 +1,53 @@
+#!/bin/bash
+
+RED='\033[0;31m'
+NC='\033[0m'
+
+if [[ ! $# -eq 1 ]]; then
+    echo -e "${RED}Invalid number of params${NC}"
+    exit 1;
+fi
+
+if [[ ! -f $1 ]]; then
+    echo -e "${RED}No such file exists"
+    exit 1;
+fi
+
+oldIFS=$IFS
+IFS=$'\n'
+
+array=()
+linesGrep="^([0-9]{2,3}.){3}[0-9]{2,3} [A-Z0-9a-z]+\.[A-Z0-9a-z]+ [^ ]+ \[[0-9]{2}\/[a-zA-Z]{3}\/[0-9]{4}(:[0-9]{2}){3} -[0-9]{4}\] \b(POST|GET) \/[^ ]* \b(HTTP\/1.1|HTTP\/2.0|HTTP\/1.0) [0-9]+ [0-9]+( \"[^\"]+\"){2}$"
+
+number=0
+
+#Get only correct lines and then get only names of the used website in descorder 
+
+for site in $( cat $1 | tr -s " " | egrep -o "$linesGrep" |  cut -d" " -f2 | sort | uniq -c | sort -r | egrep -o "[a-zA-Z0-9.]+$" | head -n 3); do
+    array[$number]=$site
+    (( number++ ))
+done
+
+#Print numbe of incorrect lines
+if [[ $number -eq 0 ]]; then
+    echo -e "${RED}No correct lines inside $1${NC}"
+fi
+
+#Output requested data for websites
+for site in ${array[@]}; do
+
+    #Get only line for current website that are correct
+    usableLines="$( cat $1 | tr -s " " | egrep -o "$linesGrep" | egrep "^([0-9]{2,3}.){3}[0-9]{2,3} $site" | cut -d" " -f1-9)"
+    usableLinesCnt=$(echo "$usableLines" | wc -l)
+
+    http2Cnt=$( echo "$usableLines" | cut -d" " -f8 | egrep "HTTP/2.0" |wc -l ) 
+    nonHttp2Cnt=$(($usableLinesCnt-$http2Cnt))
+
+    #Print the Http and nonHttp
+    echo "$site HTTP/2.0: $http2Cnt non-HTTP/2.0: $nonHttp2Cnt"
+
+    #Get all ip-s and filter only with -ge 302 code 
+    echo "$usableLines" | cut -d" " -f1,9 | awk '{if ($2 >= 302) {printf "%s\n", $1 }}' | sort | uniq -c | sort -r | head -n 5   
+done
+
+IFS=$oldIFS

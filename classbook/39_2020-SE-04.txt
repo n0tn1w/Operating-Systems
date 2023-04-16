@@ -1,0 +1,82 @@
+#!/bin/bash
+
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+ORANGE='\033[38;5;208m'
+NC='\033[0m'
+
+if [[ ! $# -eq 2 ]]; then
+    echo -e "${RED}Invalid numbe of params${NC}"
+    exit 1;
+fi
+
+#Source check ($1)
+if [[ ! -d $1 ]]; then
+    echo -e "${RED}No such dir exists $1${NC}"
+    exit 1;
+fi
+
+filesRegex=$( find $1 -type f -printf "%P\n" | egrep "\.jpg$" ) 
+filesCnt=$( echo "$filesRegex" | wc -l )
+if [[ $filesCnt -eq 0 ]]; then
+    echo -e "${RED}No suitable files inside $1${NC}"
+    exit 1;
+fi
+
+#Dest check ($2)
+if [[ -d $2 ]]; then
+    echo -e "${ORANGE}$2 already exists${NC}"
+else
+    mkdir $2
+fi
+
+oldIFS=$IFS
+IFS=$'\n'
+
+for file in $( echo "$filesRegex" ); do
+    noExt=$( echo "$file" | sed -E 's:\.jpg::g' )
+
+    #Get needed data for creating folders and links
+    title=$( echo $noExt | sed -E 's:\([^\)]+\)::g' | tr -s ' ' | sed -E 's:^[ ]+::g' | sed -E 's:[ ]+$::g' )
+    album=$( echo $noExt | egrep -o "\([^\)]+\)" | tail -n 1 | tr '(' ' ' | tr ')' ' ' | tr -s ' ' | sed -E 's:^[ ]+::g' | sed -E 's:[ ]+$::g' )
+    if [[ -z $album ]]; then
+        album="misc"
+    fi  
+    path=$( echo "$1" | sed -E 's:/$::g' )
+    time=$( find $path/$file -printf "%T+\n" | cut -d"+" -f1 )
+    hesh=$( sha256sum $1/$file | cut -d" " -f1 | head -c 16 )
+
+    #Create images base folder
+    basePath="$2/images/$hesh.jpg"
+    mkdir -p $2/images
+    cp $1/$file $basePath 
+
+    #Use variable for paths
+    byDate="by-date/$time"
+    byAlbum="by-album/$album"
+    byTitle="by-title/$title"
+    name="$title.jpg"
+
+    path1="$2/$byDate/$byAlbum/$byTitle/"
+    mkdir -p $path1
+    ln -s $basePath $path1/$name
+
+    path2="$2/$byDate/$byTitle/"
+    mkdir -p $path2
+    ln -s $basePath $path2/$name
+    
+    path3="$2/$byAlbum/$byDate/$byTitle/"
+    mkdir -p $path3
+    ln -s $basePath $path3$name
+    
+    path4="$2/$byAlbum/$byTitle/"
+    mkdir -p $path4
+    ln -s $basePath $path4$name
+    
+    path5="$2/$byTitle/"
+    mkdir -p $path5
+    ln -s $basePath $path5$name
+    
+    echo -e "${GREEN}$file succesfully added to $2${NC}"
+done
+IFS=$oldIFS
