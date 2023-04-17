@@ -1,0 +1,106 @@
+#!/bin/bash
+
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+NC='\033[0m'
+
+if [[ ! $# -eq 1 ]]; then
+    echo -e "${RED}Invalid number of params${NC}"
+    exit 1;
+fi
+
+#Regex for every componennt
+fqdn="([a-zA-Z0-9]*\.)+"
+ttl="[0-9]*"
+class="IN"
+typeC="(SOA|NS|A|AAAA)"
+
+#We will save serial
+serial=""
+
+#Validate file
+if [[ -f $1 ]]; then
+    soa=$( cat $1 | head -n 1)
+    #Find if it in the long format so that we can compress it
+    echo $soa | egrep -q "\("
+    if [[ $? -eq 0 ]]; then
+        numbers=$(cat $1 | head -n 6 | tail -n +2)
+        oldIFS=$IFS
+        IFS=$'\n'
+    
+        filteredNumbers=""
+        for line in $( echo "$numbers" ); do
+            singleNumber=$( echo $line | cut -d ";" -f1 | sed -E 's:^\s*::g' | sed -E 's:\s*$::g')
+        filteredNumbers+="$singleNumber "
+        done
+        IFS=$oldIFS
+        soa=$( echo $soa | sed -E 's:\(: :g' )
+        soa+="$filteredNumbers"
+    fi  
+    
+    #Validate the soa line
+    echo $soa | egrep -q "^\s*$fqdn\s*$ttl\s*$class\s+$typeC\s+$fqdn\s+$fqdn\s+[0-9]{10}(\s+[0-9]+){4}\s*$"
+    if [[ ! $? -eq 0 ]]; then
+        echo -e "${RED}Error: $1 invalid SOA${NC}"
+        exit 1;
+    else 
+        serial+=$(echo "$soa" | egrep -o "[0-9]{10}(\s+[0-9]+){4}\s*$" | egrep -o "^[0-9]{10}")
+    fi  
+    
+    #Validate the rest of the file
+    oldIFS=$IFS
+    IFS=$'\n'
+    
+    chekc=""
+
+    if [[ $extended -eq 0 ]]; then
+        check=$( cat $1 | tail -n +8 )
+    else 
+        check=$( cat $1 | tail -n +2 )
+    fi  
+    
+    for line in $( echo "$check" ); do
+        echo $line | cut -d";" -f1 | egrep -q "^\s*$fqdn\s*$ttl\s*$class\s+$typeC.*$|$'\n'"
+        if [[ ! $? -eq 0 ]]; then
+            echo $line
+            echo -e "${RED} Error: $1 invalid entry${NC}"
+            exit 1;
+        fi
+    done
+
+    IFS=$oldIFS
+else 
+    echo -e "${RED}$1 doesnt exist${NC}"
+    exit 1;
+fi
+
+#Change serial in file
+date=$( date "+%Y%m%d" )
+echo "$serial" | egrep -q "^$date..$"
+if [[ ! $? -eq 0 ]]; then
+    replace="${date}01"
+    sed -i "s/${serial}/${replace}/g" $1
+
+    echo -e "${GREEN}$1 updated with ( $replace )${NC}"
+else 
+    digits=$( echo $serial | egrep -o "..$" )
+    
+    if [[ $digits == "99" ]]; then
+        echo -e "${ORANGE}Limit of 99 changes in a day in $1${NC}"
+    else
+        last=$( echo $digits | egrep -o ".$" )
+        first=$( echo $digits | egrep -o "^." )
+
+        if [[ $last -eq 9 ]]; then
+            last=0
+            (( first++ ))
+        else 
+            (( last++ ))
+        fi
+
+        newSerial="${date}${first}${last}"
+        sed -i "s/${serial}/$newSerial/g" $1
+
+        echo -e "${GREEN}Updated serial ( $newSerial ) in $1${NC}"
+    fi  
+fi

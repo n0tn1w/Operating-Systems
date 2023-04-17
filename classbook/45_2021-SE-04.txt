@@ -1,0 +1,81 @@
+#!/bin/bash
+
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+NC='\033[0m'
+
+if [[ ! $# -eq 1 ]]; then
+    echo -e "${RED}Invalid number of params${NC}"
+    exit 1;
+fi
+
+#Check for number
+echo "$1" | egrep -q "^[0-9]+$"
+if [[ ! $? -eq 0 ]]; then
+    echo -e "${RED}$1 is not a number${NC}"
+    exit 1;
+fi
+
+if [[ ! $1 -ge 2 ]]; then
+    echo -e "${RED}Min 2 hours${NC}"
+    exit 1;
+fi
+
+user=$(id -un)
+if [[ "$user" != "oracle" ]] && [[ "$user" != "grid" ]] && [[ "$user" != "s0600094" ]]; then
+    echo -e "${RED}Invalid user${NC}"
+    exit 1;
+fi
+
+adcri_path="$home/bin/adrci"
+#Check for adrci file
+home=$( echo $ORACLE_HOME )
+if [[ -z $home ]]; then
+    echo -e "${RED}ORACLE_HOME is not defiend${NC}"
+    exit 1;
+else
+    if [[ -d $home ]]; then
+        if [[ -d $home/bin ]]; then
+            if [[ -f $home/bin/adrci ]]; then
+                check=$( find $adcri_path -type f -executable )
+                if [[ -z $check ]]; then
+                    echo -e "${RED}File $adrci_path is not executable${NC}"
+                    exit 1;
+                fi
+            else
+                echo -e "${RED}File $home/bin/adrci doesnt exist${NC}"
+                exit 1;
+            fi
+        else
+            echo -e "${RED}Dir $home/bin/ doesnt exist${NC}"
+            exit 1;
+        fi
+    else
+        echo -e "${RED}Dir $home doesnt exist${NC}"
+    fi
+fi
+
+diag_dest="/u01/app/$user"
+
+show_homes=$( $adcri_path exec="SET BASE $diag_dest; SHOW HOMES" )
+show_homes_cnt=$( echo "$show_homes" | wc -l )
+if [[ $show_homes_cnt -eq 0 ]]; then
+    echo -e "${RED}No ADR homes are set${NC}"
+    exit 1;
+fi
+
+filter_home=$( echo "$show_homes" | egrep "^[^/]+/(crs|tnslsnr|kfod|rdbms)/" )
+filter_home_cnt=$( echo $filter_home | wc -l )
+if [[ $filter_home_cnt -eq 0 ]]; then
+    echo -e "${RED}No home with correct second param${NC}"
+    exit 1;
+fi
+
+old_IFS=$IFS
+IFS=$'\n'
+for file in $( echo $filter_home ); do  
+    
+    min=$( echo "$1*60" | bc )
+    $adcri_path exec="SET BASE $diag_dest; SET HOMEPATH $file; PURGE -AGE $min"
+    echo -e "${GREEN}$file cleaned${NC}"
+done

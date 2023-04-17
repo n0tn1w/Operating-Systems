@@ -1,0 +1,50 @@
+#!/bin/bash
+
+RED='\033[0;31m'
+ORANGE='\033[38;5;208m'
+NC='\033[0m'
+
+#User check
+user=$(id -un)
+if [[ "$user" != "oracle" ]] && [[ "$user" != "grid" ]] && [[ "$user" != "s0600094" ]]; then
+    echo -e "${RED}Invalid user${NC}"
+    exit 1;
+fi
+
+#Check path to adrci
+home=$( echo "$ORACLE_HOME")
+pathToAdrci="$home/adrci.sh"
+if [[ ! -f $pathToAdrci ]]; then
+    echo -e "${RED}$pathToAdrci file doesnt exist${NC}"
+fi
+
+#Check if executable
+check=$( find $pathToAdrci -executable )
+if [[ -z $check ]]; then
+    echo -e "${RED}$pathToAdrci is not executable${NC}"
+    exit 1;
+fi
+
+#Execute script
+content=$( ./$pathToAdrci exec="show homes" )
+cnt=$( echo "$content" | wc -l )
+if [[ $cnt -eq 1 ]]; then
+    ehco -e "${ORANGE}No ADR homes are set${NC}"
+    exit 1;
+else 
+    filter=$( echo "$content" | tail -n +2 )    
+    oldIFS=$IFS
+    IFS=$'\n'
+
+    basePath=u01/app/$user
+    for line in $( echo "$filter" ); do  
+        filterLine=$( echo $line | sed -E 's:^\s*::g' | sed -E 's:\s*$::g')
+        path="$basePath/$filterLine"
+        size=$( find $path -printf "%s" )
+        sizeMB=$( echo "$size / 1000" | bc)
+    
+        echo "$sizeMB $path"
+    done
+
+    IFS=$oldIFS
+fi
