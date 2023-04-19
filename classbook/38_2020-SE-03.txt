@@ -45,7 +45,7 @@ if [[ -d $fromFolder ]]; then
         #Check version
         cat "$fromFolder/version" | egrep -q "^[0-9]+\.[0-9]+\.[0-9]+\-[0-9]+$"
         if [[ ! $? -eq 0 ]]; then
-            echo -e "${ORANGE}Incorrect version format in $fromFolder${NC}"
+            echo -e "${RED}Incorrect version format in $fromFolder${NC}"
             exit 1;
         fi
     fi  
@@ -72,40 +72,49 @@ entryName=$fromFolder-$versionName
 tar -cJf $entryName.tar.xz -C $fromFolder/tree .
 
 sha=$(sha256sum $entryName.tar.xz | cut -d" " -f1) 
-file="$zipFolder/packages/$sha.tar.xz"
+zipPath="$zipFolder/packages/$sha.tar.xz"
+db="$zipFolder/db"
 
 #Check if version is present
-line=$(cat "$zipFolder/db" | egrep "^$entryName")
-if [[ -z $line ]]; then
+check=$( cat $zipFolder/db | egrep "^$entryName" )
+if [[ -z $check ]]; then
+    if [[ -f $zipPath ]]; then
+        #Get the line to change the version
 
-    #Check if lib with same content exists
-    if [[ -f $file ]]; then
-        echo -e "${ORANGE}A library with same content already exists${NC}"
-        rm $entryName.tar.xz
-        exit 1;
+        rm "$entryName.tar.xz"
+    
+        getLine=$( cat $zipFolder/db | egrep "$sha" )
+        sed -i "s/$getLine/$entryName $sha/g" $db 
+        sort -o $db $db 
+    
+        echo -e "${GREEN}Found package with same data. Version change to $entryName${NC}"
+    else
+        #Add new entry
+    
+        echo "$entryName $sha" >> $db 
+        sort -o $db $db 
+        mv $entryName.tar.xz $zipPath
+
+        echo -e "${GREEN}Succefully added $entryName${NC}"
     fi  
-
-    mv $entryName.tar.xz $file
-    echo "$entryName $sha" >> "$zipFolder/db"
-    sort -o $zipFolder/db $zipFolder/db
-
-    echo -e "${GREEN}Succefully added $entryName to $zipFolder"
 else
-    oldFile=$(echo $line | cut -d" " -f2)
-    
-    #Check if lib with same content exists
-    if [[ -f $file ]]; then
-        echo -e "${ORANGE}A library with same content already exists${NC}"
-    #   rm $entryName.tar.xz
-        exit 1;
-    fi  
-    
-    #Change the line inside /db
-    sed -i "s/^$entryName .*$/$entryName $sha/g" "$zipFolder/db"
-    sort -o $zipFolder/db $zipFolder/db
-    
-    rm $zipFolder/packages/$oldFile.tar.xz
-    mv $entryName.tar.xz $file 
+    if [[ -f $zipPath ]]; then
+        #File with same version and date already exist
 
-    echo -e "${GREEN}Succefully updated $entryName in $zipFolder"
+        rm $entryName.tar.xz
+
+        echo -e "${ORANGE}This entry already exist${NC}" 
+    else
+        #Same version but with different data
+
+        oldSha=$( cat $zipFolder/db | egrep "$entryName" | egrep -o "\s[^\s]+$" | sed -E 's:^\s+::g')
+        rm $zipFolder/packages/$oldSha.tar.xz
+
+        sed -i "s/^$entryName.*$/$entryName $sha/g" $db 
+        sort -o $db $db 
+        mv $entryName.tar.xz $zipPath
+
+        echo -e "${GREEN}Updated package for $entryName${NC}"
+    fi  
 fi
+~        

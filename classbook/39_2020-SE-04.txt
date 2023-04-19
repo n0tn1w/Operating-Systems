@@ -26,6 +26,7 @@ fi
 #Dest check ($2)
 if [[ -d $2 ]]; then
     echo -e "${ORANGE}$2 already exists${NC}"
+
 else
     mkdir $2
 fi
@@ -37,11 +38,12 @@ for file in $( echo "$filesRegex" ); do
     noExt=$( echo "$file" | sed -E 's:\.jpg::g' )
 
     #Get needed data for creating folders and links
-    title=$( echo $noExt | sed -E 's:\([^\)]+\)::g' | tr -s ' ' | sed -E 's:^[ ]+::g' | sed -E 's:[ ]+$::g' )
-    album=$( echo $noExt | egrep -o "\([^\)]+\)" | tail -n 1 | tr '(' ' ' | tr ')' ' ' | tr -s ' ' | sed -E 's:^[ ]+::g' | sed -E 's:[ ]+$::g' )
+    title=$( echo $noExt | sed -E 's:\([^\)]+\)::g' | tr -s ' ' | sed -E -e 's:^\s*::g' -e  's:\s*$::g' )
+    album=$( echo $noExt | egrep -o "\([^\)]+\)" | tail -n 1 | tr '(' ' ' | tr ')' ' ' | tr -s ' ' | sed -E -e 's:^\s*::g' -e 's:\s*$::g' )
     if [[ -z $album ]]; then
         album="misc"
     fi  
+
     path=$( echo "$1" | sed -E 's:/$::g' )
     time=$( find $path/$file -printf "%T+\n" | cut -d"+" -f1 )
     hesh=$( sha256sum $1/$file | cut -d" " -f1 | head -c 16 )
@@ -59,24 +61,24 @@ for file in $( echo "$filesRegex" ); do
 
     path1="$2/$byDate/$byAlbum/$byTitle/"
     mkdir -p $path1
-    ln -s $basePath $path1/$name
+    ln -sf $basePath $path1$name
 
     path2="$2/$byDate/$byTitle/"
     mkdir -p $path2
-    ln -s $basePath $path2/$name
+    ln -sf $basePath $path2$name
     
     path3="$2/$byAlbum/$byDate/$byTitle/"
     mkdir -p $path3
-    ln -s $basePath $path3$name
+    ln -sf $basePath $path3$name
     
     path4="$2/$byAlbum/$byTitle/"
     mkdir -p $path4
-    ln -s $basePath $path4$name
+    ln -sf $basePath $path4$name
     
     path5="$2/$byTitle/"
     mkdir -p $path5
-    ln -s $basePath $path5$name
+    ln -sf $basePath $path5$name
     
     echo -e "${GREEN}$file succesfully added to $2${NC}"
 done
-IFS=$oldIFS
+IFS=$oldIFS 

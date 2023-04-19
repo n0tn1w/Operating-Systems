@@ -10,28 +10,17 @@ if [[ ! $# -eq 2 ]]; then
     exit 1;
 fi
 
-if [[ ! -f $1 ]]; then
-    echo -e "${RED}$1 is not a file"
-    exit 1;
+if [[ -f $1 ]]; then
+    echo -e "${ORANGE}$1 already exist${NC}"
+else 
+    touch $1
+    header="hostname,phy,vlans,hosts,failover,VPN-3DES-AES,peers,VLAN Trunk Ports,license,SN,key"
+    echo "$header" > $1
+    echo -e "${GREEN}$1 was created${NC}"
 fi
 
 if [[ ! -d $2 ]]; then
-    echo -e "${RED}$2 is not a dir"
-    exit 1;
-fi
-
-#Check if there are any valid files inside $2
-count=0
-for file in $( find $2 -type f); do  
-    
-    validLines=$( cat $file | egrep "^." | wc -l)
-    if [[ $validLines -eq 11 ]]; then
-        (( count++ ))
-    fi  
-done
-
-if [[ $count -eq 0 ]]; then
-    echo -e "${ORANGE}No valid files in $2"
+    echo -e "${RED}$2 is not a dir${NC}"
     exit 1;
 fi
 
@@ -42,7 +31,8 @@ IFS=$'\n'
 
 for file in $( find $2 -type f); do  
     
-    cntValidLines=$( cat $file | egrep "^." | wc -l)
+    #Check if file is valid
+    cntValidLines=$( cat $file | egrep -v "^$" | wc -l)
     if [[ $cntValidLines -eq 11 ]]; then
     
         #Insert fileName of $file into $1
@@ -51,13 +41,13 @@ for file in $( find $2 -type f); do
 
         #Insert rest of the $file data into $1
         index=1
-        for validLine in $( cat $file | egrep "^." ); do
+        for validLine in $( cat $file | egrep -v "^$" ); do
 
             #First text line is not used and the 9th is not the same format as the rest 
             if (( index > 1 )) && (( index != 9 )); then
                 echo -n ',' >> $1
 
-                echo -n "$(echo $validLine | cut -d":" -f2 | sed -E 's/^( )+//g' | sed -E 's/( )+$//g')" >> $1
+                echo -n "$(echo $validLine | cut -d":" -f2 | sed -E -e 's/^\s*//g' -e 's/\s*$//g')" >> $1
 
             elif (( index == 9 )); then
                 echo -n ',' >> $1
@@ -71,15 +61,20 @@ for file in $( find $2 -type f); do
         done
         echo -ne '\n' >> $1
         (( entriesCnt++ ))
-    fi
+    else 
+        echo -e "${ORANGE}$file is an invalid file${NC}"
+    fi  
 
 done
 IFS=$oldIFS
 
 #Print the number of added entries into $1
 if [[ ! $entriesCnt -eq 0 ]]; then
+
     echo -e "${GREEN}$entriesCnt entries added into $1${NC}"
 else
-    echo -e "${ORANGE}No entries added to $1${NC}"
+
+    echo -e "${RED}No entries added to $1${NC}"
+    rm -r $1
 fi
 
