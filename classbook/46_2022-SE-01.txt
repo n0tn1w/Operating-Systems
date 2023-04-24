@@ -1,0 +1,49 @@
+#!/bin/bash
+
+RED='\033[0;31m'
+ORANGE='\033[38;5;208m'
+GREEN='\033[0;32m'
+NC='\033[0m'
+
+if [[ ! $# -eq 3 ]]; then
+    echo -e "${RED}Invalid number of params${NC}"
+    exit 1;
+fi
+
+if ! echo $1 | egrep -q "^[0-9]+(\.[0-9]+)?$"; then
+    echo -e "${RED}$1 Not a number${NC}"
+    exit 1;
+fi
+
+baseLine=$( cat base.csv | egrep -o "^[^,]+,$3,[^,]+$")
+if [[ -z $baseLine ]]; then
+    echo -e "${RED}Invalid $3${NC}"
+    exit 5;
+fi
+
+cnt=$( echo "$baseLine" | wc -l)
+if [[ ! $cnt -eq 1 ]]; then
+    echo -e "${RED}base.csv duplication $3${NC}"
+    exit 2;
+fi
+
+unitName=$( echo "$baseLine" | cut -d"," -f1)
+meadure=$( echo "$baseLine" | cut -d"," -f3)
+
+prefixLine=$( cat prefix.csv | egrep -o "^[^,]+,$2,[^,]+$" )
+if [[ -z $prefixLine ]]; then
+    echo -e "${RED}Invalid $2${NC}"
+    exit 7;
+fi
+
+cnt2=$( echo $prefixLine | wc -l)
+if [[ ! $cnt2 -eq 1 ]]; then
+    echo -e "${RED}prefix.csv dup  $2${NC}"
+    exit 2;
+fi
+
+decimal=$( echo "$prefixLine" | cut -d"," -f3)
+
+cal=$( echo "$decimal*$1" | bc )
+
+echo -e "${GREEN}$cal $3 ($unitName, $meadure)${NC}"

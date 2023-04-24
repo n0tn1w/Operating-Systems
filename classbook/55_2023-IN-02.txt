@@ -1,0 +1,108 @@
+#!/bin/bash
+
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+NC='\033[0m'
+
+if [[ ! $# -eq 1 ]]; then
+    echo -e "${RED}Invalid number of params${NC}"
+    exit 1;
+fi
+
+if [[ ! -d "$1" ]]; then
+    echo -e "${RED}$1 is not a dir${NC}"
+    exit 2;
+fi
+
+#Check if dir is empty
+checkDirEmpty=$( find $1 -mindepth 1 -type f )
+if [[ -z $checkDirEmpty ]]; then
+    echo -e "${RED}No files in $1${NC}"
+    exit 3;
+fi
+
+#Create tempfile with all the names of files that we want to remove
+temp="tempfile.txt"
+links="links.txt"
+touch $links
+touch $temp
+
+#Check for every file in dir
+for file in $( find $1 -mindepth 1 ); do
+
+    fileName=$( echo "$file" | egrep -o  "(.+)\1+" | sed -E 's:(.+)\1+:\1:g' )
+    crType=0
+    #1 - File, 2 - Hardlink
+
+    if [[ -z $fileName ]]; then
+        #File
+
+        crType=1
+        cmd=$( cat $temp | egrep  "^$file$" )
+        if [[ -n $cmd ]]; then
+            continue
+        fi
+    else
+        #HardLink
+
+        crType=2
+        cmd=$( cat $links | egrep  "^$file$" )
+        if [[ -n $cmd ]]; then
+            continue
+        fi
+    fi  
+
+    doOtherHardLinks=0
+    for loopF in $( find $1 -mindepth 1 | egrep -v "^$file$" ); do
+
+        diffOutput=$( diff $file $loopF )
+        if [[ -z $diffOutput ]]; then
+
+                loopFName=$( echo "$loopF" | egrep -o  "(.+)\1+" | sed -E 's:(.+)\1+:\1:g' )
+
+                if [[ -z $loopFName ]]; then
+                    #File
+
+                    echo "$loopF" >> $temp
+                else
+                    #Hardlink
+
+                    (( numOfHardlinks++ ))
+                    echo "$loopF" >> $links
+                fi
+        fi
+
+    done
+
+    if [[ ! $numOfHardlinks -eq 0 ]]; then
+        if [[ $crType -eq 1 ]]; then
+            echo "$fileName" >> $temp
+        else
+            echo "$fileName" >> $links
+        fi
+    fi
+
+done
+
+#Remove last name
+for file in $( cat $links | sort | uniq ); do
+    removing=$( echo "$file" | egrep -o  "(.+)\1+" | sed -E 's:(.+)\1+:\1:g' )
+    newName=$( echo "$file" | sed -E "s/${removing}$//g" )
+    mv $file $newName
+    echo -e "${GREEN}$newName changed${NC}"
+done
+
+#Read temp file 
+tempData=$( cat $temp | sort | uniq )
+
+
+oldIFS=$IFS
+IFS=$'\n'
+for file in $( echo "$tempData"); do
+    echo -e "${RED}$file should be deleted${NC}"
+done
+IFS=$oldIFS
+
+
+rm $temp
+rm $links

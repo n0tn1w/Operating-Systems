@@ -1,0 +1,48 @@
+#!/bin/bash
+
+if [[  ! $# -eq 2 ]]; then
+    echo "Invalid number of params"
+    exit 1;
+fi
+
+if [[ ! -d $1 ]]; then
+    echo "$1 doesnt exist"
+    exit 4;
+fi
+
+if [[ -d $2 ]]; then
+    path=$( find $2 -maxdepth 1 -empty )
+    if [[ -z "$path" ]]; then
+        echo "$2 is not empty"  
+        exit 4;
+    else 
+        if [[ ! "$path" ==  "$2" ]]; then
+            echo "$2 is not empty2"
+            exit 2;
+        fi
+    fi  
+else
+    echo "No such dir"
+    exit 2;
+fi
+
+oldIFS=$IFS
+IFS=$'\n'
+
+for file in $( find $1 -mindepth 1 -maxdepth 1 -type d,f ); do
+    cp -r $file $2
+done
+
+for file in $( find $2 -mindepth 1 -type f | egrep "/\.[^\.]+\.swp$" ); do
+#   echo $file
+    getName=$( basename $file | sed -E -e 's:^\.::g' -e 's:\.swp$::g' )
+    dir=$( dirname $file )    
+    srchFor="$dir/$getName"
+
+    echo $srchFor
+    if [[ -f $srchFor ]]; then
+        echo $srchFor match find
+        rm $file
+    fi  
+    
+done

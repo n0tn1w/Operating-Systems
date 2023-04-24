@@ -1,0 +1,48 @@
+#!/bin/bash
+
+if [[ ! $# -eq 1 ]]; then
+    echo "Invalid number of params"
+    exit 1;
+fi
+
+if ! echo $1 | egrep -qo "^[0-9A-Z]{1,4}$"; then
+    echo "$1 invalid type"
+    exit 2;
+fi
+
+
+
+path="proc/acpi/wakeup"
+if [[ -f $path ]]; then
+    if [[ ! -x $path ]]; then
+        echo "$path is not executable"
+    fi  
+else
+    echo "$path doesnt exist"
+fi
+
+filterFile=$( cat $path | tail -n +2 | egrep -o "^[A-Z0-9]{1,4}.+\*(enabled|disabled).*$" )
+line=$( echo "$filterFile" | egrep -o "^$1" )
+
+if [[ -z $line ]]; then
+    echo "$1 no such dev found"
+fi
+cnt=$( echo "$line" | wc -l)
+
+if [[ ! $cnt -eq 1 ]]; then
+    echo "$1 is found more then once"
+fi
+
+if echo $line | egrep "enabled"; then
+    echo "$1 is already on"
+    exit 1;
+fi
+
+echo $1 > $path
+
+if cat $path | egrep "^$1" | egrep "enabled"; then
+    echo "$1 enabled"
+else
+    echo "Something went wrong"
+    exit 4;
+fi
